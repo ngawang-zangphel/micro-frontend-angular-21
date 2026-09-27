@@ -8,11 +8,64 @@ Three Angular apps composed with Native Federation. The host loads each remote a
 | Users | `users` | 4201 | Remote |
 | Announcements | `announcements` | 4202 | Remote |
 
-Node `>=24.16.0` is required (`@softarc/native-federation-orchestrator` declares that engine).
+Node `>=24.16.0` and npm `11` are required. `@softarc/native-federation-orchestrator` refuses older Node versions.
+
+## Packages
+
+Each folder is its own Angular 21 app. Install the same federation packages in `host`, `users`, and `announcements`.
+
+| Package | Install as | What it does |
+| --- | --- | --- |
+| `@angular-architects/native-federation-v4` | dependency | Federation builder, `initFederation`, and `loadRemoteModule`. Use `21.2.x` with Angular 21. |
+| `es-module-shims` | dependency | Loads the import map the host and remotes share. |
+| `@softarc/native-federation-orchestrator` | dev dependency | Runtime that resolves remotes. Requires Node `>=24.16.0`. |
+
+Angular packages already come from `ng new`: `@angular/core`, `@angular/common`, `@angular/compiler`, `@angular/forms`, `@angular/platform-browser`, and `@angular/router` at `^21.1.0`, plus `@angular/cli` and `@angular/build` at `^21.1.2`.
+
+The host UI also uses Tailwind. In each app that needs it:
+
+```bash
+npm i -D tailwindcss @tailwindcss/postcss postcss
+```
+
+## Install
+
+In a fresh app, install the federation packages, then run the init schematic. `--type dynamic-host` is for the shell. `--type remote` is for users and announcements.
+
+```bash
+cd host
+npm i @angular-architects/native-federation-v4 es-module-shims
+npm i -D @softarc/native-federation-orchestrator
+ng g @angular-architects/native-federation-v4:init --project host --port 4200 --type dynamic-host
+```
+
+```bash
+cd users
+npm i @angular-architects/native-federation-v4 es-module-shims
+npm i -D @softarc/native-federation-orchestrator
+ng g @angular-architects/native-federation-v4:init --project users --port 4201 --type remote
+```
+
+```bash
+cd announcements
+npm i @angular-architects/native-federation-v4 es-module-shims
+npm i -D @softarc/native-federation-orchestrator
+ng g @angular-architects/native-federation-v4:init --project announcements --port 4202 --type remote
+```
+
+The schematic points `angular.json` at `@angular-architects/native-federation-v4:build`, moves bootstrap into `bootstrap.ts`, and generates `federation.config.mjs`.
+
+If those files are already in the repo, only install what `package.json` lists:
+
+```bash
+cd host && npm install
+cd ../users && npm install
+cd ../announcements && npm install
+```
 
 ## Run
 
-Install dependencies in each app, then start all three. Remotes must be up before the host loads them.
+Start all three. Remotes must be up before the host loads them.
 
 ```bash
 cd users && npm install && ng serve --port=4201
