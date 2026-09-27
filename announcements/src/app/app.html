@@ -1,0 +1,11 @@
+<section class="card">
+  <h1>Welcome to the Announcements App</h1>
+  <ul>
+    @for (note of notes(); track note.title) {
+      <li>
+        <span class="title">{{ note.title }}</span>
+        <span class="when">{{ note.when }}</span>
+      </li>
+    }
+  </ul>
+</section>

@@ -1,0 +1,11 @@
+<section class="card">
+  <h1>Welcome to the Users App</h1>
+  <ul>
+    @for (person of people(); track person.name) {
+      <li>
+        <span class="name">{{ person.name }}</span>
+        <span class="role">{{ person.role }}</span>
+      </li>
+    }
+  </ul>
+</section>
