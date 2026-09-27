@@ -4,7 +4,7 @@ Three Angular apps composed with Native Federation. The host loads each remote a
 
 | App | Folder | Port | Role |
 | --- | --- | --- | --- |
-| Host | `host` | 4200 | Shell that creates the remote components |
+| Host | `host` | 4200 | Shell that routes to each remote |
 | Users | `users` | 4201 | Remote |
 | Announcements | `announcements` | 4202 | Remote |
 
@@ -73,7 +73,7 @@ cd announcements && npm install && ng serve --port=4202
 cd host && npm install && ng serve
 ```
 
-Open http://localhost:4200/. The host shell renders first, then the users and announcements components appear under the nav.
+Open http://localhost:4200/. That URL redirects to `/home`. Users and Announcements load only when you open their routes.
 
 ## How a remote is exposed
 
@@ -105,27 +105,40 @@ federation
 
 ## How the host loads a remote
 
-`MicroFrontend.loadRemoteComponent(port, remoteName)` uses the federation promise from `main.ts`:
+`loadRemoteComponent(port, remoteName)` in `host/src/app/micro-frontend.ts` uses the federation promise from `main.ts`:
 
 1. `initRemoteEntry` registers `http://localhost:${port}/remoteEntry.json`.
 2. `loadRemoteModule(remoteName, './Component')` loads the exposed file.
-3. The method returns that module's `App` class.
+3. The function returns that module's `App` class.
+
+The host routes in `host/src/app/app.routes.ts` pass that class to `loadComponent`. The router creates the component when the URL is opened.
+
+| URL | What renders |
+| --- | --- |
+| `/` | Redirects to `/home` |
+| `/home` | Local `Home` component |
+| `/users` | Users remote on port 4201 |
+| `/announcements` | Announcements remote on port 4202 |
 
 ```ts
-const withRemote = await runtime.initRemoteEntry(
-  `http://localhost:${port}/remoteEntry.json`,
-  remoteName,
-);
-const remoteModule = await withRemote.loadRemoteModule(remoteName, './Component');
-return remoteModule.App;
+export const routes: Routes = [
+  { path: '', pathMatch: 'full', redirectTo: 'home' },
+  { path: 'home', component: Home },
+  { path: 'users', loadComponent: () => loadRemoteComponent(4201, 'users') },
+  {
+    path: 'announcements',
+    loadComponent: () => loadRemoteComponent(4202, 'announcements'),
+  },
+];
 ```
 
-In the host component, pass that class to `createComponent`. The return value is already the component class, so do not read `.App` or `.AppComponent` off it.
+`loadComponent` must return `App` itself. The exposed file does not export `AppComponent`.
 
-```ts
-const UsersComponent = await this.microFrontendService.loadRemoteComponent(4201, 'users');
-const ref = this.usersContainer.createComponent(UsersComponent);
-ref.changeDetectorRef.detectChanges();
+The shell template keeps the nav and a single outlet:
+
+```html
+<a routerLink="/users">Users</a>
+<router-outlet />
 ```
 
-Announcements is the same call with port `4202` and remote name `announcements`. The template needs a `ViewContainerRef` target for each remote (`#users`, `#announcements`).
+`RouterLink`, `RouterLinkActive`, and `RouterOutlet` are imported on the host `App` component. `provideRouter(routes)` is already registered in `host/src/app/app.config.ts`.
